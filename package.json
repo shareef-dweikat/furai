@@ -1,0 +1,18 @@
+{
+  "name": "furai",
+  "private": true,
+  "version": "0.0.0",
+  "packageManager": "pnpm@10.34.7",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @furai/shared build && pnpm --parallel --filter @furai/shared --filter @furai/web --filter @furai/api dev",
+    "dev:web": "pnpm --filter @furai/web dev",
+    "dev:api": "pnpm --filter @furai/api dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r --if-present lint",
+    "typecheck": "pnpm --filter @furai/shared build && pnpm -r --if-present typecheck",
+    "test": "pnpm -r --if-present test"
+  }
+}
