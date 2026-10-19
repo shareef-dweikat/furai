@@ -1,16 +1,8 @@
 import { Link } from 'react-router'
 import styled from 'styled-components'
+import { ApartmentView } from '../components/ApartmentView.tsx'
 import { Page } from '../components/Page.tsx'
 import { useSpaceDesignStore } from '../stores/use-space-design.ts'
-
-const Preview = styled.img`
-  display: block;
-  width: 100%;
-  height: auto;
-  border: 1px solid #e4ddd2;
-  border-radius: 16px;
-  background: #fffcf7;
-`
 
 const Empty = styled.p`
   margin: 0;
@@ -31,7 +23,7 @@ export function UploadedSpacePage() {
   return (
     <Page title="My space design tool" lede={fileName ?? undefined}>
       {svgUrl ? (
-        <Preview src={svgUrl} alt={fileName ?? 'Uploaded space design'} />
+        <ApartmentView svgUrl={svgUrl} />
       ) : (
         <Empty>
           No design yet. <ChooseLink to="/space">Choose an SVG file</ChooseLink> to
