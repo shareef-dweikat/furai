@@ -358,6 +358,7 @@ function Overview({ plan }: { plan: FloorPlan }) {
     <OrbitControls
       makeDefault
       enableDamping
+      zoomToCursor
       target={[0, 0.4, 0]}
       maxPolarAngle={Math.PI / 2 - 0.08}
       minDistance={plan.span * 0.2}
