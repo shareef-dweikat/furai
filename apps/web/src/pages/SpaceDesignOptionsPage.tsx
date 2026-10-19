@@ -2,6 +2,7 @@ import { useRef, type ChangeEvent } from 'react'
 import { useNavigate } from 'react-router'
 import styled from 'styled-components'
 import { Page } from '../components/Page.tsx'
+import { useSpaceDesignStore } from '../stores/use-space-design.ts'
 
 const Options = styled.div`
   display: grid;
@@ -75,12 +76,13 @@ const Action = styled.button`
 
 export function SpaceDesignOptionsPage() {
   const navigate = useNavigate()
-  const xmlInputRef = useRef<HTMLInputElement>(null)
+  const svgInputRef = useRef<HTMLInputElement>(null)
 
-  function onXmlChosen(event: ChangeEvent<HTMLInputElement>) {
+  function onSvgChosen(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
     event.target.value = ''
     if (!file) return
+    useSpaceDesignStore.getState().setSvgFile(file)
     navigate('/space/my-design')
   }
 
@@ -98,16 +100,16 @@ export function SpaceDesignOptionsPage() {
         </Card>
         <Card>
           <Eyebrow>Import</Eyebrow>
-          <Heading>Upload your own XML space design</Heading>
-          <Copy>Bring in an existing layout from an XML file.</Copy>
-          <Action type="button" onClick={() => xmlInputRef.current?.click()}>
-            Choose XML file
+          <Heading>Upload your own SVG space design</Heading>
+          <Copy>Bring in an existing layout from an SVG file.</Copy>
+          <Action type="button" onClick={() => svgInputRef.current?.click()}>
+            Choose SVG file
           </Action>
           <HiddenFileInput
-            ref={xmlInputRef}
+            ref={svgInputRef}
             type="file"
-            accept=".xml,text/xml,application/xml"
-            onChange={onXmlChosen}
+            accept=".svg,image/svg+xml"
+            onChange={onSvgChosen}
           />
         </Card>
       </Options>
