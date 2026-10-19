@@ -13,6 +13,7 @@ import {
 import {
   FloorPlanError,
   readFloorPlan,
+  type Door,
   type FloorPlan,
   type Ring,
 } from '../lib/floor-plan.ts'
@@ -115,7 +116,34 @@ function Shell({ plan }: { plan: FloorPlan }) {
           drop={0}
         />
       ))}
+      {plan.doors.map((door, index) => (
+        <DoorPanel key={index} door={door} wallHeight={plan.wallHeight} />
+      ))}
     </>
+  )
+}
+
+const DOOR_LEAF_HEIGHT = 2.05
+const DOOR_LEAF_THICKNESS = 0.045
+
+function DoorPanel({ door, wallHeight }: { door: Door; wallHeight: number }) {
+  const leafHeight = Math.min(DOOR_LEAF_HEIGHT, wallHeight * 0.86)
+  const headerHeight = Math.max(0, wallHeight - leafHeight)
+  const leafThickness = Math.min(DOOR_LEAF_THICKNESS, door.thickness * 0.55)
+
+  return (
+    <group position={[door.x, 0, door.z]} rotation={[0, door.angle, 0]}>
+      <mesh position={[0, leafHeight / 2, 0]}>
+        <boxGeometry args={[door.width, leafHeight, leafThickness]} />
+        <meshStandardMaterial color="#b08968" roughness={0.72} metalness={0} />
+      </mesh>
+      {headerHeight > 0 ? (
+        <mesh position={[0, leafHeight + headerHeight / 2, 0]}>
+          <boxGeometry args={[door.width, headerHeight, door.thickness]} />
+          <meshStandardMaterial color="#f4f1ea" roughness={0.92} metalness={0} />
+        </mesh>
+      ) : null}
+    </group>
   )
 }
 

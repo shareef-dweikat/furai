@@ -7,9 +7,18 @@ export type WallShape = {
   holes: Ring[]
 }
 
+export type Door = {
+  x: number
+  z: number
+  angle: number
+  width: number
+  thickness: number
+}
+
 export type FloorPlan = {
   walls: WallShape[]
   floor: Ring
+  doors: Door[]
   wallHeight: number
   floorThickness: number
   span: number
@@ -54,6 +63,12 @@ type DoorArc = {
   radius: number
 }
 
+type PlacedDoor = {
+  hinge: Pt
+  direction: Pt
+  radius: number
+}
+
 export async function readFloorPlan(svgUrl: string): Promise<FloorPlan> {
   const svgText = await fetch(svgUrl).then((response) => response.text())
   const viewBox = readViewBox(svgText)
@@ -82,16 +97,26 @@ export async function readFloorPlan(svgUrl: string): Promise<FloorPlan> {
   if (wallPixels < 80) throw new FloorPlanError()
 
   removePageFrames(walls, width, height)
-  const doors = findDoorArcs(svgText, viewBox, width, height)
   const wallThickness = thickness * 2
-  for (const door of doors) punchDoor(walls, width, height, door, wallThickness)
+  const distToWall = chamfer(width, height, walls)
+  const doorArcs = dedupeDoors([
+    ...findDoorArcs(svgText, viewBox, width, height),
+    ...findRasterDoorArcs(ink, walls, width, height),
+  ])
+  const placedDoors: PlacedDoor[] = []
+  for (const door of doorArcs) {
+    const placed = punchDoor(walls, distToWall, width, height, door, wallThickness)
+    if (placed) placedDoors.push(placed)
+  }
 
   const wallLoops = loopsFromMask(walls, width, height, 36)
   const nested = nestWalls(wallLoops)
   if (nested.length === 0) throw new FloorPlanError()
 
   const doorRadius =
-    doors.length > 0 ? Math.max(...doors.map((door) => door.radius)) : Math.max(width, height) * 0.045
+    doorArcs.length > 0
+      ? Math.max(...doorArcs.map((door) => door.radius))
+      : Math.max(width, height) * 0.045
   const closeRadius = Math.min(
     doorRadius * 0.55 + threshold * 2,
     Math.max(width, height) * 0.12,
@@ -99,7 +124,7 @@ export async function readFloorPlan(svgUrl: string): Promise<FloorPlan> {
   const floorLoop = footprint(walls, width, height, closeRadius)
   if (!floorLoop) throw new FloorPlanError()
 
-  return toMeters(nested, floorLoop)
+  return toMeters(nested, floorLoop, placedDoors, wallThickness)
 }
 
 function readViewBox(svgText: string): ViewBox {
@@ -280,10 +305,27 @@ function removePageFrames(mask: Uint8Array, width: number, height: number) {
   }
 }
 
+type SampleCurve = {
+  getPoint: (t: number) => { x: number; y: number }
+}
+
 function findDoorArcs(svgText: string, viewBox: ViewBox, width: number, height: number): DoorArc[] {
   const data = new SVGLoader().parse(svgText)
   const longSide = Math.max(viewBox.w, viewBox.h)
   const doors: DoorArc[] = []
+  const toPixel = (x: number, y: number): Pt => [
+    ((x - viewBox.x) / viewBox.w) * width,
+    ((y - viewBox.y) / viewBox.h) * height,
+  ]
+  const accept = (center: Pt, start: Pt, end: Pt, radius: number, strokeWidth: number) => {
+    if (radius < longSide * 0.02 || radius > longSide * 0.2) return
+    if (strokeWidth > radius * 0.35) return
+    doors.push({
+      hinge: toPixel(center[0], center[1]),
+      ends: [toPixel(start[0], start[1]), toPixel(end[0], end[1])],
+      radius: ((radius / viewBox.w) * width + (radius / viewBox.h) * height) / 2,
+    })
+  }
 
   for (const path of data.paths) {
     const style = path.userData?.style as { stroke?: string; strokeWidth?: number } | undefined
@@ -292,31 +334,241 @@ function findDoorArcs(svgText: string, viewBox: ViewBox, width: number, height: 
     const strokeWidth = Number(style?.strokeWidth ?? 1)
 
     for (const subPath of path.subPaths) {
-      for (const curve of subPath.curves) {
-        if (!isEllipse(curve)) continue
-        const radius = (curve.xRadius + curve.yRadius) / 2
-        const ratio = curve.xRadius / curve.yRadius
-        if (ratio < 0.75 || ratio > 1.33) continue
-        if (radius < longSide * 0.02 || radius > longSide * 0.2) continue
-        if (strokeWidth > radius * 0.35) continue
-        const sweep = arcSweep(curve.aStartAngle, curve.aEndAngle)
-        if (sweep < Math.PI * 0.3 || sweep > Math.PI * 0.85) continue
-
-        const start = curve.getPoint(0)
-        const end = curve.getPoint(1)
-        const toPixel = (x: number, y: number): Pt => [
-          ((x - viewBox.x) / viewBox.w) * width,
-          ((y - viewBox.y) / viewBox.h) * height,
-        ]
-        doors.push({
-          hinge: toPixel(curve.aX, curve.aY),
-          ends: [toPixel(start.x, start.y), toPixel(end.x, end.y)],
-          radius: ((curve.xRadius / viewBox.w) * width + (curve.yRadius / viewBox.h) * height) / 2,
-        })
+      let run: SampleCurve[] = []
+      const flush = () => {
+        if (run.length > 0) {
+          const arc = arcFromSamples(samplesOf(run), 0)
+          if (arc && arc.sweep >= Math.PI * 0.3 && arc.sweep <= Math.PI * 0.85) {
+            accept(arc.center, arc.start, arc.end, arc.radius, strokeWidth)
+          }
+        }
+        run = []
       }
+      for (const curve of subPath.curves) {
+        if (isEllipse(curve)) {
+          flush()
+          const radius = (curve.xRadius + curve.yRadius) / 2
+          const ratio = curve.xRadius / curve.yRadius
+          if (ratio < 0.75 || ratio > 1.33) continue
+          const sweep = arcSweep(curve.aStartAngle, curve.aEndAngle)
+          if (sweep < Math.PI * 0.3 || sweep > Math.PI * 0.85) continue
+          const start = curve.getPoint(0)
+          const end = curve.getPoint(1)
+          accept([curve.aX, curve.aY], [start.x, start.y], [end.x, end.y], radius, strokeWidth)
+          continue
+        }
+        if (isLineCurve(curve) || !isSampleCurve(curve)) {
+          flush()
+          continue
+        }
+        run.push(curve)
+      }
+      flush()
     }
   }
   return doors
+}
+
+function isLineCurve(curve: object): boolean {
+  return 'isLineCurve' in curve && (curve as { isLineCurve?: boolean }).isLineCurve === true
+}
+
+function isSampleCurve(curve: object): curve is SampleCurve {
+  return typeof (curve as SampleCurve).getPoint === 'function'
+}
+
+function samplesOf(curves: SampleCurve[]): Pt[] {
+  const samples: Pt[] = []
+  for (const curve of curves) {
+    for (let step = 0; step <= 6; step++) {
+      const point = curve.getPoint(step / 6)
+      const next: Pt = [point.x, point.y]
+      const previous = samples[samples.length - 1]
+      if (!previous || Math.hypot(previous[0] - next[0], previous[1] - next[1]) > 1e-4) {
+        samples.push(next)
+      }
+    }
+  }
+  return samples
+}
+
+function findRasterDoorArcs(
+  ink: Uint8Array,
+  walls: Uint8Array,
+  width: number,
+  height: number,
+): DoorArc[] {
+  const thin = new Uint8Array(ink.length)
+  for (let index = 0; index < ink.length; index++) {
+    if (ink[index] && !walls[index]) thin[index] = 1
+  }
+  const longSide = Math.max(width, height)
+  const doors: DoorArc[] = []
+  for (const points of connectedPoints(thin, width, height, 24, 8000)) {
+    const arc = arcFromSamples(points, 0)
+    if (!arc) continue
+    if (arc.radius < longSide * 0.02 || arc.radius > longSide * 0.2) continue
+    if (arc.sweep < Math.PI * 0.28 || arc.sweep > Math.PI * 0.9) continue
+    doors.push({
+      hinge: arc.center,
+      ends: [arc.start, arc.end],
+      radius: arc.radius,
+    })
+  }
+  return doors
+}
+
+type FittedArc = {
+  center: Pt
+  start: Pt
+  end: Pt
+  radius: number
+  sweep: number
+}
+
+function arcFromSamples(points: Pt[], tolerance: number): FittedArc | null {
+  if (points.length < 4) return null
+  const [start, end] = farthestPair(points)
+  const chord = Math.hypot(end[0] - start[0], end[1] - start[1])
+  if (chord < 1e-3) return null
+  const mid = farthestFromChord(points, start, end)
+  const bulge = distanceToChord(mid, start, end)
+  if (bulge < chord * 0.08) return null
+  const circle = circleFrom3(start, mid, end)
+  if (!circle) return null
+  const slop = Math.max(tolerance, chord * 0.07)
+  const inliers = points.filter(
+    (point) => Math.abs(Math.hypot(point[0] - circle.center[0], point[1] - circle.center[1]) - circle.radius) <= slop,
+  )
+  if (inliers.length < 4 || inliers.length < points.length * 0.5) return null
+  const span = arcSpan(circle.center, inliers)
+  if (!span) return null
+  return { center: circle.center, start: span.start, end: span.end, radius: circle.radius, sweep: span.sweep }
+}
+
+function farthestPair(points: Pt[]): [Pt, Pt] {
+  const step = Math.max(1, Math.ceil(points.length / 280))
+  let best = -1
+  let pair: [Pt, Pt] = [points[0], points[Math.min(1, points.length - 1)]]
+  for (let i = 0; i < points.length; i += step) {
+    for (let j = i + step; j < points.length; j += step) {
+      const dist = Math.hypot(points[i][0] - points[j][0], points[i][1] - points[j][1])
+      if (dist > best) {
+        best = dist
+        pair = [points[i], points[j]]
+      }
+    }
+  }
+  return pair
+}
+
+function farthestFromChord(points: Pt[], start: Pt, end: Pt): Pt {
+  let best = points[0]
+  let bestDist = -1
+  for (const point of points) {
+    const dist = distanceToChord(point, start, end)
+    if (dist > bestDist) {
+      bestDist = dist
+      best = point
+    }
+  }
+  return best
+}
+
+function distanceToChord(point: Pt, start: Pt, end: Pt): number {
+  const dx = end[0] - start[0]
+  const dy = end[1] - start[1]
+  const length = Math.hypot(dx, dy) || 1
+  return Math.abs(dy * point[0] - dx * point[1] + end[0] * start[1] - end[1] * start[0]) / length
+}
+
+function circleFrom3(a: Pt, b: Pt, c: Pt): { center: Pt; radius: number } | null {
+  const [x1, y1] = a
+  const [x2, y2] = b
+  const [x3, y3] = c
+  const det = 2 * (x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2))
+  if (Math.abs(det) < 1e-6) return null
+  const a2 = x1 * x1 + y1 * y1
+  const b2 = x2 * x2 + y2 * y2
+  const c2 = x3 * x3 + y3 * y3
+  const center: Pt = [
+    (a2 * (y2 - y3) + b2 * (y3 - y1) + c2 * (y1 - y2)) / det,
+    (a2 * (x3 - x2) + b2 * (x1 - x3) + c2 * (x2 - x1)) / det,
+  ]
+  const radius = Math.hypot(x1 - center[0], y1 - center[1])
+  if (!Number.isFinite(radius) || radius < 1e-3) return null
+  return { center, radius }
+}
+
+function arcSpan(center: Pt, points: Pt[]): { start: Pt; end: Pt; sweep: number } | null {
+  const angles = points.map((point) => Math.atan2(point[1] - center[1], point[0] - center[0]))
+  const order = angles.map((angle, index) => ({ angle, index })).sort((a, b) => a.angle - b.angle)
+  let maxGap = 0
+  let gapAt = 0
+  for (let index = 0; index < order.length; index++) {
+    const next = index + 1 < order.length ? order[index + 1].angle : order[0].angle + Math.PI * 2
+    const gap = next - order[index].angle
+    if (gap > maxGap) {
+      maxGap = gap
+      gapAt = index
+    }
+  }
+  const sweep = Math.PI * 2 - maxGap
+  const start = points[order[(gapAt + 1) % order.length].index]
+  const end = points[order[gapAt].index]
+  return { start, end, sweep }
+}
+
+function dedupeDoors(doors: DoorArc[]): DoorArc[] {
+  const kept: DoorArc[] = []
+  for (const door of doors) {
+    const duplicate = kept.some((other) => {
+      const dist = Math.hypot(door.hinge[0] - other.hinge[0], door.hinge[1] - other.hinge[1])
+      return dist < Math.min(door.radius, other.radius) * 0.45
+    })
+    if (!duplicate) kept.push(door)
+  }
+  return kept
+}
+
+function connectedPoints(
+  mask: Uint8Array,
+  width: number,
+  height: number,
+  minCount: number,
+  maxCount: number,
+): Pt[][] {
+  const seen = new Uint8Array(mask.length)
+  const groups: Pt[][] = []
+  for (let start = 0; start < mask.length; start++) {
+    if (!mask[start] || seen[start]) continue
+    const points: Pt[] = []
+    const stack = [start]
+    seen[start] = 1
+    let tooBig = false
+    while (stack.length > 0) {
+      const index = stack.pop() as number
+      const x = index % width
+      const y = (index - x) / width
+      if (!tooBig) {
+        points.push([x + 0.5, y + 0.5])
+        if (points.length > maxCount) tooBig = true
+      }
+      for (let ny = y - 1; ny <= y + 1; ny++) {
+        if (ny < 0 || ny >= height) continue
+        for (let nx = x - 1; nx <= x + 1; nx++) {
+          if (nx < 0 || nx >= width || (nx === x && ny === y)) continue
+          const neighbor = ny * width + nx
+          if (mask[neighbor] && !seen[neighbor]) {
+            seen[neighbor] = 1
+            stack.push(neighbor)
+          }
+        }
+      }
+    }
+    if (!tooBig && points.length >= minCount) groups.push(points)
+  }
+  return groups
 }
 
 function isEllipse(curve: object): curve is EllipseCurveLike {
@@ -331,22 +583,89 @@ function arcSweep(start: number, end: number): number {
 
 function punchDoor(
   mask: Uint8Array,
+  distToWall: Float32Array,
   width: number,
   height: number,
   door: DoorArc,
   wallThickness: number,
-) {
-  const directions = door.ends.map((end) => [end[0] - door.hinge[0], end[1] - door.hinge[1]] as Pt)
-  let best: Pt | null = null
-  let bestRemoved = 0
-  for (const direction of directions) {
-    const removed = stampDoor(mask, width, height, door, direction, wallThickness, false)
-    if (removed > bestRemoved) {
-      bestRemoved = removed
-      best = direction
+): PlacedDoor | null {
+  // The swing symbol hangs in the room. The leaf runs along the wall, even when
+  // that opening was already a gap and there is nothing left to punch out.
+  if (sampleDist(distToWall, width, height, door.hinge) > wallThickness * 2.2) return null
+  const tangent = wallTangent(mask, width, height, door.hinge, wallThickness)
+  if (!tangent) return null
+
+  let direction: Pt | null = null
+  let bestDot = 0.62
+  for (const end of door.ends) {
+    const dir: Pt = [end[0] - door.hinge[0], end[1] - door.hinge[1]]
+    const length = Math.hypot(dir[0], dir[1])
+    if (length < door.radius * 0.45) continue
+    const dot = Math.abs((dir[0] / length) * tangent[0] + (dir[1] / length) * tangent[1])
+    if (dot > bestDot) {
+      bestDot = dot
+      direction = dir
     }
   }
-  if (best && bestRemoved > 8) stampDoor(mask, width, height, door, best, wallThickness, true)
+  if (!direction) return null
+  stampDoor(mask, width, height, door, direction, wallThickness, true)
+  return { hinge: door.hinge, direction, radius: door.radius }
+}
+
+function sampleDist(dist: Float32Array, width: number, height: number, point: Pt): number {
+  const x = Math.round(point[0])
+  const y = Math.round(point[1])
+  if (x < 0 || y < 0 || x >= width || y >= height) return INF
+  return dist[y * width + x]
+}
+
+function wallTangent(
+  mask: Uint8Array,
+  width: number,
+  height: number,
+  hinge: Pt,
+  wallThickness: number,
+): Pt | null {
+  const reach = Math.max(wallThickness * 5, 8)
+  const minX = Math.max(0, Math.floor(hinge[0] - reach))
+  const maxX = Math.min(width - 1, Math.ceil(hinge[0] + reach))
+  const minY = Math.max(0, Math.floor(hinge[1] - reach))
+  const maxY = Math.min(height - 1, Math.ceil(hinge[1] + reach))
+  let sumX = 0
+  let sumY = 0
+  let count = 0
+  for (let y = minY; y <= maxY; y++) {
+    for (let x = minX; x <= maxX; x++) {
+      if (!mask[y * width + x]) continue
+      sumX += x
+      sumY += y
+      count++
+    }
+  }
+  if (count < 8) return null
+  const meanX = sumX / count
+  const meanY = sumY / count
+  let cxx = 0
+  let cyy = 0
+  let cxy = 0
+  for (let y = minY; y <= maxY; y++) {
+    for (let x = minX; x <= maxX; x++) {
+      if (!mask[y * width + x]) continue
+      const dx = x - meanX
+      const dy = y - meanY
+      cxx += dx * dx
+      cyy += dy * dy
+      cxy += dx * dy
+    }
+  }
+  const trace = cxx + cyy
+  const det = cxx * cyy - cxy * cxy
+  const root = Math.sqrt(Math.max(0, (trace * trace) / 4 - det))
+  const major = trace / 2 + root
+  const minor = trace / 2 - root
+  if (major < minor * 3) return null
+  const angle = 0.5 * Math.atan2(2 * cxy, cxx - cyy)
+  return [Math.cos(angle), Math.sin(angle)]
 }
 
 function stampDoor(
@@ -415,7 +734,12 @@ function dilate(mask: Uint8Array, width: number, height: number, radius: number)
   return out
 }
 
-function toMeters(walls: Array<{ outer: Pt[]; holes: Pt[][] }>, floor: Pt[]): FloorPlan {
+function toMeters(
+  walls: Array<{ outer: Pt[]; holes: Pt[][] }>,
+  floor: Pt[],
+  openings: PlacedDoor[],
+  wallThicknessPx: number,
+): FloorPlan {
   const bounds = ringBounds(floor)
   const longSide = Math.max(bounds.width, bounds.height)
   if (longSide < 1) throw new FloorPlanError()
@@ -431,9 +755,34 @@ function toMeters(walls: Array<{ outer: Pt[]; holes: Pt[][] }>, floor: Pt[]): Fl
       holes: shape.holes.map(project),
     })),
     floor: project(floor),
+    doors: openings.map((opening) => placeDoor(opening, centerX, centerY, scale, wallThicknessPx)),
     wallHeight: WALL_HEIGHT,
     floorThickness: FLOOR_THICKNESS,
     span: PLAN_METERS,
+  }
+}
+
+function placeDoor(
+  opening: PlacedDoor,
+  centerX: number,
+  centerY: number,
+  scale: number,
+  wallThicknessPx: number,
+): Door {
+  const length = Math.hypot(opening.direction[0], opening.direction[1]) || 1
+  const ux = opening.direction[0] / length
+  const uy = opening.direction[1] / length
+  // stampDoor clears from 0.2 radii behind the hinge to one radius ahead.
+  const back = opening.radius * 0.2
+  const centerAlong = (opening.radius - back) / 2
+  const cx = opening.hinge[0] + ux * centerAlong
+  const cy = opening.hinge[1] + uy * centerAlong
+  return {
+    x: (cx - centerX) * scale,
+    z: (cy - centerY) * scale,
+    angle: Math.atan2(-uy, ux),
+    width: (opening.radius + back) * scale,
+    thickness: wallThicknessPx * scale,
   }
 }
 
