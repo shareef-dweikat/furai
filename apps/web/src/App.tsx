@@ -3,7 +3,8 @@ import styled, { createGlobalStyle } from 'styled-components'
 import { Navbar } from './components/Navbar.tsx'
 import { Page } from './components/Page.tsx'
 import { HomePage } from './pages/HomePage.tsx'
-import { SpaceDesignPage } from './pages/SpaceDesignPage.tsx'
+import { SpaceDesignOptionsPage } from './pages/SpaceDesignOptionsPage.tsx'
+import { UploadedSpacePage } from './pages/UploadedSpacePage.tsx'
 
 const GlobalStyle = createGlobalStyle`
   body {
@@ -36,7 +37,8 @@ function App() {
           <Route index element={<HomePage />} />
           <Route path="cart" element={<Page title="Cart" />} />
           <Route path="orders" element={<Page title="Orders" />} />
-          <Route path="space" element={<SpaceDesignPage />} />
+          <Route path="space" element={<SpaceDesignOptionsPage />} />
+          <Route path="space/my-design" element={<UploadedSpacePage />} />
           <Route path="*" element={<Page title="Page not found" />} />
         </Routes>
       </Shell>

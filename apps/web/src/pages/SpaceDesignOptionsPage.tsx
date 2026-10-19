@@ -1,3 +1,5 @@
+import { useRef, type ChangeEvent } from 'react'
+import { useNavigate } from 'react-router'
 import styled from 'styled-components'
 import { Page } from '../components/Page.tsx'
 
@@ -46,6 +48,10 @@ const Copy = styled.p`
   line-height: 1.5;
 `
 
+const HiddenFileInput = styled.input`
+  display: none;
+`
+
 const Action = styled.button`
   align-self: flex-start;
   border: 0;
@@ -67,7 +73,17 @@ const Action = styled.button`
   }
 `
 
-export function SpaceDesignPage() {
+export function SpaceDesignOptionsPage() {
+  const navigate = useNavigate()
+  const xmlInputRef = useRef<HTMLInputElement>(null)
+
+  function onXmlChosen(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+    navigate('/space/my-design')
+  }
+
   return (
     <Page
       title="Space design tool"
@@ -84,7 +100,15 @@ export function SpaceDesignPage() {
           <Eyebrow>Import</Eyebrow>
           <Heading>Upload your own XML space design</Heading>
           <Copy>Bring in an existing layout from an XML file.</Copy>
-          <Action type="button">Choose XML file</Action>
+          <Action type="button" onClick={() => xmlInputRef.current?.click()}>
+            Choose XML file
+          </Action>
+          <HiddenFileInput
+            ref={xmlInputRef}
+            type="file"
+            accept=".xml,text/xml,application/xml"
+            onChange={onXmlChosen}
+          />
         </Card>
       </Options>
     </Page>
