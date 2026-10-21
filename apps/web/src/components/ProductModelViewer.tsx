@@ -127,6 +127,43 @@ function createLamp(): THREE.Group {
   return group
 }
 
+function createCloset(): THREE.Group {
+  const group = new THREE.Group()
+  const wood = new THREE.MeshStandardMaterial({
+    color: 0x9e7b56,
+    roughness: 0.6,
+    metalness: 0.08,
+  })
+  const doorMaterial = new THREE.MeshStandardMaterial({
+    color: 0xb89d77,
+    roughness: 0.62,
+    metalness: 0.12,
+  })
+  const handleMaterial = new THREE.MeshStandardMaterial({
+    color: 0xc8c8c8,
+    roughness: 0.42,
+    metalness: 0.7,
+  })
+
+  const body = new THREE.Mesh(new THREE.BoxGeometry(0.41, 0.52, 0.34), wood)
+  body.position.y = 0.26
+  group.add(body)
+
+  const door = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.5, 0.03), doorMaterial)
+  door.position.set(0, 0.26, 0.185)
+  group.add(door)
+
+  const handle = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.009, 0.009, 0.05, 10),
+    handleMaterial,
+  )
+  handle.rotation.x = Math.PI / 2
+  handle.position.set(0.13, 0.26, 0.21)
+  group.add(handle)
+
+  return group
+}
+
 function createModel(kind: Product['model']): THREE.Group {
   switch (kind) {
     case 'chair':
@@ -135,6 +172,8 @@ function createModel(kind: Product['model']): THREE.Group {
       return createTable()
     case 'lamp':
       return createLamp()
+    case 'closet':
+      return createCloset()
   }
 }
 
@@ -203,7 +242,6 @@ export function ProductModelViewer({ model }: { model: Product['model'] }) {
     let frameId = 0
     const animate = () => {
       frameId = window.requestAnimationFrame(animate)
-      product.rotation.y += 0.004
       controls.update()
       renderer.render(scene, camera)
     }

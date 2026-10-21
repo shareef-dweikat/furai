@@ -3,7 +3,7 @@ export interface Product {
   name: string
   price: number
   image: string
-  model: 'chair' | 'table' | 'lamp'
+  model: 'chair' | 'table' | 'lamp' | 'closet'
 }
 
 export const products: Product[] = [
@@ -20,6 +20,13 @@ export const products: Product[] = [
     price: 200,
     image: 'https://via.placeholder.com/150',
     model: 'table',
+  },
+  {
+    id: 3,
+    name: 'Product 3',
+    price: 300,
+    image: 'https://via.placeholder.com/150',
+    model: 'closet',
   },
 ]
 
