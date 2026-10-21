@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { Route, Routes } from 'react-router'
 import styled, { createGlobalStyle } from 'styled-components'
 import { Navbar } from './components/Navbar.tsx'
@@ -5,6 +6,12 @@ import { Page } from './components/Page.tsx'
 import { HomePage } from './pages/HomePage.tsx'
 import { SpaceDesignOptionsPage } from './pages/SpaceDesignOptionsPage.tsx'
 import { UploadedSpacePage } from './pages/UploadedSpacePage.tsx'
+
+const ProductDetailsPage = lazy(() =>
+  import('./pages/ProductDetailsPage.tsx').then((module) => ({
+    default: module.ProductDetailsPage,
+  })),
+)
 
 const GlobalStyle = createGlobalStyle`
   body {
@@ -35,6 +42,14 @@ function App() {
       <Shell>
         <Routes>
           <Route index element={<HomePage />} />
+          <Route
+            path="products/:productId"
+            element={
+              <Suspense fallback={null}>
+                <ProductDetailsPage />
+              </Suspense>
+            }
+          />
           <Route path="cart" element={<Page title="Cart" />} />
           <Route path="orders" element={<Page title="Orders" />} />
           <Route path="space" element={<SpaceDesignOptionsPage />} />

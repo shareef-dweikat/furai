@@ -1,21 +1,7 @@
 import styled from 'styled-components'
 import { Page } from '../components/Page.tsx'
-import { ProductCard, type Product } from '../components/ProductCard.tsx'
-
-const products: Product[] = [
-  {
-    id: 1,
-    name: 'Product 1',
-    price: 100,
-    image: 'https://via.placeholder.com/150',
-  },
-  {
-    id: 2,
-    name: 'Product 2',
-    price: 200,
-    image: 'https://via.placeholder.com/150',
-  },
-]
+import { ProductCard } from '../components/ProductCard.tsx'
+import { products } from '../data/products.ts'
 
 const ProductGrid = styled.ul`
   display: grid;

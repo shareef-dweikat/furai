@@ -1,11 +1,8 @@
+import { Link } from 'react-router'
 import styled from 'styled-components'
+import type { Product } from '../data/products.ts'
 
-export interface Product {
-  id: number
-  name: string
-  price: number
-  image: string
-}
+export type { Product }
 
 const priceFormat = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -14,6 +11,7 @@ const priceFormat = new Intl.NumberFormat('en-US', {
 })
 
 const Card = styled.li`
+  position: relative;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -21,6 +19,27 @@ const Card = styled.li`
   border-radius: 16px;
   background: #fffcf7;
   box-shadow: 0 10px 24px rgb(28 25 21 / 6%);
+`
+
+const CardLink = styled(Link)`
+  color: inherit;
+  text-decoration: none;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+  }
+
+  &:focus-visible {
+    outline: none;
+  }
+
+  &:focus-visible::after {
+    outline: 2px solid #1c1915;
+    outline-offset: -3px;
+  }
 `
 
 const ProductMedia = styled.div`
@@ -60,6 +79,7 @@ const AddButton = styled.button`
   position: absolute;
   top: 12px;
   right: 12px;
+  z-index: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -89,13 +109,15 @@ export function ProductCard({ product }: { product: Product }) {
   return (
     <Card>
       <ProductMedia>
-        <AddButton type="button" aria-label="Add to cart">
+        <AddButton type="button" aria-label={`Add ${product.name} to cart`}>
           +
         </AddButton>
         <span aria-hidden="true">{String(product.id).padStart(2, '0')}</span>
       </ProductMedia>
       <ProductBody>
-        <ProductName>{product.name}</ProductName>
+        <ProductName>
+          <CardLink to={`/products/${product.id}`}>{product.name}</CardLink>
+        </ProductName>
         <ProductPrice>{priceFormat.format(product.price)}</ProductPrice>
       </ProductBody>
     </Card>

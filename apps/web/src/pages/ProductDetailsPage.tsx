@@ -1,0 +1,83 @@
+import { Link, useParams } from 'react-router'
+import styled from 'styled-components'
+import { Page } from '../components/Page.tsx'
+import { ProductModelViewer } from '../components/ProductModelViewer.tsx'
+import { getProductById } from '../data/products.ts'
+
+const priceFormat = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+  maximumFractionDigits: 0,
+})
+
+const Layout = styled.div`
+  display: grid;
+  gap: 24px;
+`
+
+const Meta = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 24px;
+`
+
+const Price = styled.p`
+  margin: 0;
+  color: #3f382f;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 1.15rem;
+  font-variant-numeric: tabular-nums;
+`
+
+const Hint = styled.p`
+  margin: 0;
+  color: #6b6258;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.85rem;
+`
+
+const BackLink = styled(Link)`
+  color: #1c1915;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.95rem;
+`
+
+const Empty = styled.p`
+  margin: 0;
+  color: #6b6258;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.5;
+`
+
+export function ProductDetailsPage() {
+  const { productId } = useParams()
+  const id = Number(productId)
+  const product = Number.isFinite(id) ? getProductById(id) : undefined
+
+  if (!product) {
+    return (
+      <Page title="Product not found">
+        <Empty>
+          That product does not exist.{' '}
+          <BackLink to="/">Back to products</BackLink>
+        </Empty>
+      </Page>
+    )
+  }
+
+  return (
+    <Page title={product.name}>
+      <Layout>
+        <Meta>
+          <Price>{priceFormat.format(product.price)}</Price>
+          <Hint>Drag to rotate · scroll to zoom</Hint>
+        </Meta>
+        <ProductModelViewer model={product.model} />
+        <BackLink to="/">← All products</BackLink>
+      </Layout>
+    </Page>
+  )
+}
