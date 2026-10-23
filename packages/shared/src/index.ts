@@ -15,3 +15,17 @@ export interface HealthStatus {
   service: 'furai-api';
   timestamp: string;
 }
+
+export type ProductModel = 'chair' | 'table' | 'lamp' | 'closet';
+
+export interface ProductSummary {
+  id: number;
+  name: string;
+  price: number;
+  image: string;
+}
+
+export interface ProductDetails extends ProductSummary {
+  color: string;
+  model: ProductModel;
+}

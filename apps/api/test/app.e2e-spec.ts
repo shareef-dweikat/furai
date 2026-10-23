@@ -37,6 +37,50 @@ describe('App (e2e)', () => {
       .expect(400);
   });
 
+  it('GET /api/products returns catalog summaries', () => {
+    return request(app.getHttpServer())
+      .get('/api/products')
+      .expect(200)
+      .expect([
+        {
+          id: 1,
+          name: 'Product 1',
+          price: 100,
+          image: 'https://via.placeholder.com/150',
+        },
+        {
+          id: 2,
+          name: 'Product 2',
+          price: 200,
+          image: 'https://via.placeholder.com/150',
+        },
+        {
+          id: 3,
+          name: 'Product 3',
+          price: 300,
+          image: 'https://via.placeholder.com/150',
+        },
+      ]);
+  });
+
+  it('GET /api/products/1 returns color and model', () => {
+    return request(app.getHttpServer())
+      .get('/api/products/1')
+      .expect(200)
+      .expect({
+        id: 1,
+        name: 'Product 1',
+        price: 100,
+        image: 'https://via.placeholder.com/150',
+        color: 'oak',
+        model: 'chair',
+      });
+  });
+
+  it('GET /api/products/99 is not found', () => {
+    return request(app.getHttpServer()).get('/api/products/99').expect(404);
+  });
+
   it('POST /api/items creates a note that GET /api/items returns', async () => {
     const created = await request(app.getHttpServer())
       .post('/api/items')
