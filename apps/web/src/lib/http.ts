@@ -1,9 +1,4 @@
-import {
-  API_GLOBAL_PREFIX,
-  type CreateItemRequest,
-  type HealthStatus,
-  type Item,
-} from '@furai/shared'
+import { API_GLOBAL_PREFIX } from '@furai/shared'
 
 const API_BASE = `/${API_GLOBAL_PREFIX}`
 
@@ -38,20 +33,4 @@ async function readError(response: Response): Promise<string> {
   }
 
   return `Request failed (${response.status})`
-}
-
-export function fetchHealth(): Promise<HealthStatus> {
-  return request<HealthStatus>('/health')
-}
-
-export function fetchItems(): Promise<Item[]> {
-  return request<Item[]>('/items')
-}
-
-export function createItem(title: string): Promise<Item> {
-  const payload: CreateItemRequest = { title }
-  return request<Item>('/items', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  })
 }

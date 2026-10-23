@@ -1,6 +1,7 @@
 import type { HealthStatus, Item } from '@furai/shared'
 import { create } from 'zustand'
-import { createItem, fetchHealth, fetchItems } from '../lib/api.ts'
+import { getHealth } from '../network/services/health/health.service.ts'
+import { createItem, getItems } from '../network/services/items/items.service.ts'
 
 interface AppState {
   health: HealthStatus | null
@@ -25,7 +26,7 @@ export const useAppStore = create<AppState>((set) => ({
   refresh: async () => {
     set({ loading: true, error: null })
     try {
-      const [health, items] = await Promise.all([fetchHealth(), fetchItems()])
+      const [health, items] = await Promise.all([getHealth(), getItems()])
       set({ health, items, loading: false })
     } catch (error) {
       set({

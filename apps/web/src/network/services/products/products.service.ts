@@ -1,4 +1,4 @@
-import { request } from '../../../lib/api.ts'
+import { request } from '../../../lib/http.ts'
 import type { ProductDetails, ProductSummary } from './product-model.ts'
 
 export function getProducts(): Promise<ProductSummary[]> {
