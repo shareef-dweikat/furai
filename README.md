@@ -76,3 +76,73 @@ pnpm build
 pnpm test
 pnpm --filter @furai/api test:e2e
 ```
+
+## Code cleanliness
+
+[Fallow](https://fallow.tools/docs/) checks unused code, duplication, and health across `apps/web`, `apps/api`, and `packages/shared`. Run it from the repository root. `pnpm install` is enough; there is no global install.
+
+Oxlint (`pnpm lint`) checks each file. Fallow checks how those files connect. Run both.
+
+**See the state of the code**
+
+```bash
+pnpm fallow                  # unused code, duplication, and health together
+pnpm fallow health --score   # 0–100 score and the biggest deductions
+pnpm fallow dead-code        # unused files, exports, and dependencies
+pnpm fallow dupes            # copied blocks across apps and packages
+```
+
+Limit a run to your change, or to one package:
+
+```bash
+pnpm fallow --changed-since main
+pnpm fallow dead-code --workspace apps/web
+```
+
+**Before you delete something**, ask Fallow to prove it is unused. A name that looks unused in one app can still be imported by the other.
+
+```bash
+pnpm fallow dead-code --trace apps/web/src/data/products.ts:products
+pnpm fallow dead-code --trace-dependency some-package
+```
+
+**Clean up only what Fallow can do safely.** Preview first, then apply:
+
+```bash
+pnpm fallow fix --dry-run
+pnpm fallow fix
+```
+
+That removes supported unused code. Duplicates and complex functions stay in the report for you to refactor.
+
+**Before a pull request**, check only what your branch introduced:
+
+```bash
+pnpm fallow audit --base main
+```
+
+A `fail` verdict means this change added a finding. Existing issues in files you did not touch stay out of the verdict.
+
+### Coding agents
+
+The same checks are already wired for Cursor. After `pnpm install`, enable the **fallow** MCP server if it is off, and start chats from the repository root.
+
+| File | What it does |
+| --- | --- |
+| `AGENTS.md` | Which `fallow` command to run before deleting code, refactoring, or committing |
+| `.agents/skills/fallow` | Analysis skill, matched to the installed Fallow version |
+| `.agents/skills/fallow-setup` | Setup skill for code-quality tooling |
+| `.cursor/mcp.json` | Registers the `fallow` MCP server as `npx --no fallow-mcp` |
+
+`AGENTS.md` tells the Cursor agent to run `pnpm fallow audit` before it commits. That is an instruction the agent is expected to follow. Git does not enforce it: a commit from your terminal still goes through, and so does a commit if the agent skips the check.
+
+Claude Code and Codex can install a real gate with `pnpm exec fallow agent install`. That hook runs when the agent tries to commit or push, and blocks the command when `fallow audit` returns `fail`. Fallow skips that hook for Cursor, because Cursor's hook format is different. This repo only has the `AGENTS.md` instruction.
+
+When you want the check yourself, run `pnpm fallow audit --base main`.
+
+Refresh the agent files after a Fallow upgrade:
+
+```bash
+pnpm exec fallow agent install --dry-run          # preview
+pnpm exec fallow agent install --harness cursor   # rewrite the Cursor files
+```
