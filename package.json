@@ -13,7 +13,9 @@
     "build": "pnpm -r build",
     "lint": "pnpm -r --if-present lint",
     "typecheck": "pnpm --filter @furai/shared build && pnpm -r --if-present typecheck",
-    "test": "pnpm -r --if-present test"
+    "test": "pnpm -r --if-present test",
+    "fallow": "fallow",
+    "fallow:audit": "fallow audit"
   },
   "devDependencies": {
     "fallow": "^3.35.0"

@@ -19,9 +19,10 @@ This file gives coding agents project-specific context. Keep it short and update
 
 <!-- fallow init prefilled these from package.json; confirm before relying on them -->
 - Install: pnpm install
-- Build:
-- Test: Vitest
-- Typecheck or lint:
+- Build: pnpm build
+- Test: pnpm test (Vitest)
+- Typecheck or lint: pnpm typecheck; pnpm lint (Oxlint). Format the API with pnpm --filter @furai/api format (Prettier).
+- Code health: pnpm fallow; before a commit, pnpm fallow audit
 
 ## Fallow
 
