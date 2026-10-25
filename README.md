@@ -102,7 +102,7 @@ pnpm fallow dead-code --workspace apps/web
 **Before you delete something**, ask Fallow to prove it is unused. A name that looks unused in one app can still be imported by the other.
 
 ```bash
-pnpm fallow dead-code --trace apps/web/src/data/products.ts:products
+pnpm fallow dead-code --trace apps/web/src/network/services/products/products.service.ts:getProducts
 pnpm fallow dead-code --trace-dependency some-package
 ```
 

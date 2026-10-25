@@ -2,7 +2,7 @@ import { Link, useParams } from 'react-router'
 import styled from 'styled-components'
 import { Page } from '../components/Page.tsx'
 import { ProductModelViewer } from '../components/ProductModelViewer.tsx'
-import { getProductById } from '../data/products.ts'
+import { useProductDetails } from '../network/hooks/products/use-product-details.ts'
 
 const priceFormat = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -54,16 +54,26 @@ const Empty = styled.p`
 
 export function ProductDetailsPage() {
   const { productId } = useParams()
-  const id = Number(productId)
-  const product = Number.isFinite(id) ? getProductById(id) : undefined
+  const parsedId = Number(productId)
+  const id = Number.isInteger(parsedId) && parsedId > 0 ? parsedId : null
+  const { data: product, loading, error } = useProductDetails(id)
+  const missing = id === null || error === 'Product not found'
 
-  if (!product) {
+  if (!loading && (missing || error || !product)) {
     return (
-      <Page title="Product not found">
+      <Page title={missing ? 'Product not found' : 'Could not load product'}>
         <Empty>
-          That product does not exist.{' '}
+          {missing ? 'That product does not exist.' : error}{' '}
           <BackLink to="/">Back to products</BackLink>
         </Empty>
+      </Page>
+    )
+  }
+
+  if (loading || !product) {
+    return (
+      <Page title="Product">
+        <Empty>Loading product…</Empty>
       </Page>
     )
   }

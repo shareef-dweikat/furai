@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import styled from 'styled-components'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
-import type { Product } from '../data/products.ts'
+import type { ProductModel } from '../network/services/products/product-model.ts'
 
 const Viewport = styled.div`
   position: relative;
@@ -164,7 +164,7 @@ function createCloset(): THREE.Group {
   return group
 }
 
-function createModel(kind: Product['model']): THREE.Group {
+function createModel(kind: ProductModel): THREE.Group {
   switch (kind) {
     case 'chair':
       return createChair()
@@ -177,7 +177,7 @@ function createModel(kind: Product['model']): THREE.Group {
   }
 }
 
-export function ProductModelViewer({ model }: { model: Product['model'] }) {
+export function ProductModelViewer({ model }: { model: ProductModel }) {
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {

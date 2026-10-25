@@ -1,8 +1,6 @@
 import { Link } from 'react-router'
 import styled from 'styled-components'
-import type { Product } from '../data/products.ts'
-
-export type { Product }
+import type { ProductSummary } from '../network/services/products/product-model.ts'
 
 const priceFormat = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -105,7 +103,7 @@ const AddButton = styled.button`
   }
 `
 
-export function ProductCard({ product }: { product: Product }) {
+export function ProductCard({ product }: { product: ProductSummary }) {
   return (
     <Card>
       <ProductMedia>

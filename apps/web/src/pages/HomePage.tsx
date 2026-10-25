@@ -1,7 +1,7 @@
 import styled from 'styled-components'
 import { Page } from '../components/Page.tsx'
 import { ProductCard } from '../components/ProductCard.tsx'
-import { products } from '../data/products.ts'
+import { useProducts } from '../network/hooks/products/use-products.ts'
 
 const ProductGrid = styled.ul`
   display: grid;
@@ -12,7 +12,35 @@ const ProductGrid = styled.ul`
   list-style: none;
 `
 
+const Status = styled.p`
+  margin: 0;
+  color: #6b6258;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.5;
+`
+
 export function HomePage() {
+  const { data, loading, error } = useProducts()
+
+  if (loading) {
+    return (
+      <Page title="Products">
+        <Status>Loading products…</Status>
+      </Page>
+    )
+  }
+
+  if (error) {
+    return (
+      <Page title="Products">
+        <Status>{error}</Status>
+      </Page>
+    )
+  }
+
+  const products = data ?? []
+
   return (
     <Page title="Products" lede={`${products.length} available`}>
       <ProductGrid>
