@@ -129,20 +129,20 @@ The same checks are already wired for Cursor. After `pnpm install`, enable the *
 
 | File | What it does |
 | --- | --- |
-| `AGENTS.md` | Which `fallow` command to run before deleting code, refactoring, or committing |
-| `.agents/skills/fallow` | Analysis skill, matched to the installed Fallow version |
+| `AGENTS.md` | Short project context loaded in every chat: layout, commands, and agent rules |
+| `.agents/skills/fallow` | Fallow task map and analysis skill, read when a Fallow task comes up |
 | `.agents/skills/fallow-setup` | Setup skill for code-quality tooling |
 | `.cursor/mcp.json` | Registers the `fallow` MCP server as `npx --no fallow-mcp` |
 
-`AGENTS.md` tells the Cursor agent to run `pnpm fallow audit` before it commits. That is an instruction the agent is expected to follow. Git does not enforce it: a commit from your terminal still goes through, and so does a commit if the agent skips the check.
+The Fallow task map stays in `.agents/skills/fallow`, so it is not sent with every chat. Git does not enforce an audit: a commit from your terminal still goes through, and so does a commit if the agent skips the check.
 
-Claude Code and Codex can install a real gate with `pnpm exec fallow agent install`. That hook runs when the agent tries to commit or push, and blocks the command when `fallow audit` returns `fail`. Fallow skips that hook for Cursor, because Cursor's hook format is different. This repo only has the `AGENTS.md` instruction.
+Claude Code and Codex can install a real gate with `pnpm exec fallow agent install`. That hook runs when the agent tries to commit or push, and blocks the command when `fallow audit` returns `fail`. Fallow skips that hook for Cursor, because Cursor's hook format is different.
 
 When you want the check yourself, run `pnpm fallow audit --base main`.
 
-Refresh the agent files after a Fallow upgrade:
+Refresh the agent files after a Fallow upgrade. `--without guide` leaves `AGENTS.md` alone; a plain install writes the Fallow task map back into it.
 
 ```bash
-pnpm exec fallow agent install --dry-run          # preview
-pnpm exec fallow agent install --harness cursor   # rewrite the Cursor files
+pnpm exec fallow agent install --dry-run --without guide          # preview
+pnpm exec fallow agent install --harness cursor --without guide   # rewrite the Cursor files
 ```
