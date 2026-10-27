@@ -1,22 +1,22 @@
 ---
 name: commit
 description: >-
-  Commit the current changes with a capitalized imperative summary of 50
-  characters or less and a body that states the motivation and how the change
-  differs from the previous implementation. Use when the user asks to commit,
-  create a git commit, or commit the changes.
+  Draft a commit message for the already staged changes: a capitalized
+  imperative summary of 50 characters or less, then a body that states the
+  motivation and how the change differs from the previous implementation. Use
+  when the user asks for a commit message. Do not commit, stage, or push.
 ---
 
-# Commit
+# Commit message
 
-Commit only when the user explicitly asks. Do not push unless they ask.
+Write the message and stop. The user commits manually. Do not run `git add`, `git commit`, `git push`, or any other command that changes the repository.
 
 ## Inspect
 
 Run these in parallel:
 
 - `git status`
-- `git diff` and `git diff --staged`
+- `git diff --staged`
 - `git log -15 --format='%s'`
 
 Do not explore the codebase beyond these git commands. Write the message from `git diff --staged` using the rules below. Do not copy an older subject style that breaks them.
@@ -26,34 +26,22 @@ Do not explore the codebase beyond these git commands. Write the message from `g
 Include the already staged files only.
 Don't stage files.
 
-Do not commit secrets (`.env`, credentials, keys). If a staged file is one, warn the user and stop.
+If a staged file is a secret (`.env`, credentials, keys), warn the user and do not draft a message for it.
 
-If nothing is staged, stop. Do not create an empty commit.
+If nothing is staged, stop and say so.
 
-## Create the commit
+## Reply
 
-```bash
-git commit -m "$(cat <<'EOF'
+Put only the message in a fenced block so the blank line is preserved:
+
+```
 Capitalized summary of 50 characters or less
 
 Body wrapped to about 72 characters. State the motivation, then how
 this differs from the previous implementation.
-
-EOF
-)"
-git status
 ```
 
-Pass the message through a heredoc so the blank line stays intact. Omit the body only when the summary alone is enough, and then do not add a trailing blank line.
-
-## Safety
-
-- Do not update git config.
-- Do not skip hooks (`--no-verify`, `--no-gpg-sign`).
-- Do not use git commands with `-i`.
-- Do not push, force-push, or hard-reset unless the user asks.
-- Do not amend unless the user asked, you created `HEAD` in this conversation, and it has not been pushed.
-- If a hook rejects the commit, fix the problem and create a new commit. Do not amend a rejected commit.
+Omit the body only when the summary alone is enough, and then do not add a trailing blank line.
 
 ## Write Good Commit Messages
 
