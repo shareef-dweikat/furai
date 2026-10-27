@@ -12,6 +12,7 @@ export interface CartLine {
 interface CartState {
   items: CartLine[]
   addProduct: (product: ProductSummary) => void
+  removeProduct: (id: number) => void
 }
 
 export const useCartStore = create<CartState>()(
@@ -44,6 +45,10 @@ export const useCartStore = create<CartState>()(
             ),
           }
         }),
+      removeProduct: (id) =>
+        set((state) => ({
+          items: state.items.filter((item) => item.id !== id),
+        })),
     }),
     {
       name: 'furai-cart',

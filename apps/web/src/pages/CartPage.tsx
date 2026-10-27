@@ -19,7 +19,7 @@ const Lines = styled.ul`
 
 const Line = styled.li`
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 16px;
   border: 1px solid #e4ddd2;
@@ -42,12 +42,38 @@ const Meta = styled.p`
   font-variant-numeric: tabular-nums;
 `
 
+const LineEnd = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+`
+
 const LineTotal = styled.p`
   margin: 0;
   color: #3f382f;
   font-family: ui-sans-serif, system-ui, sans-serif;
   font-size: 0.95rem;
   font-variant-numeric: tabular-nums;
+`
+
+const RemoveButton = styled.button`
+  border: 0;
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: transparent;
+  color: #1c1915;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.95rem;
+  cursor: pointer;
+
+  &:hover {
+    background: #efe8dc;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #1c1915;
+    outline-offset: 3px;
+  }
 `
 
 const Empty = styled.p`
@@ -60,6 +86,7 @@ const Empty = styled.p`
 
 export function CartPage() {
   const items = useCartStore((state) => state.items)
+  const removeProduct = useCartStore((state) => state.removeProduct)
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0)
 
   if (items.length === 0) {
@@ -81,9 +108,18 @@ export function CartPage() {
                 {priceFormat.format(item.price)} · Qty {item.quantity}
               </Meta>
             </div>
-            <LineTotal>
-              {priceFormat.format(item.price * item.quantity)}
-            </LineTotal>
+            <LineEnd>
+              <LineTotal>
+                {priceFormat.format(item.price * item.quantity)}
+              </LineTotal>
+              <RemoveButton
+                type="button"
+                aria-label={`Remove ${item.name} from cart`}
+                onClick={() => removeProduct(item.id)}
+              >
+                Remove
+              </RemoveButton>
+            </LineEnd>
           </Line>
         ))}
       </Lines>
