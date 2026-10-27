@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router'
 import styled from 'styled-components'
+import { useCartStore } from '../stores/use-cart-store.ts'
 
 const navItems = [
   { to: '/cart', label: 'Cart' },
@@ -59,6 +60,8 @@ const Tab = styled(NavLink)`
 `
 
 export function Navbar() {
+  const lineCount = useCartStore((state) => state.items.length)
+
   return (
     <Bar>
       <Nav aria-label="Primary">
@@ -66,7 +69,9 @@ export function Navbar() {
           {navItems.map((item) => (
             <li key={item.to}>
               <Tab to={item.to} end>
-                {item.label}
+                {item.to === '/cart' && lineCount > 0
+                  ? `${item.label} (${lineCount})`
+                  : item.label}
               </Tab>
             </li>
           ))}

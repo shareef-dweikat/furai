@@ -1,6 +1,7 @@
 import { Link } from 'react-router'
 import styled from 'styled-components'
 import type { ProductSummary } from '../network/services/products/product-model.ts'
+import { useCartStore } from '../stores/use-cart-store.ts'
 
 const priceFormat = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -104,10 +105,16 @@ const AddButton = styled.button`
 `
 
 export function ProductCard({ product }: { product: ProductSummary }) {
+  const addProduct = useCartStore((state) => state.addProduct)
+
   return (
     <Card>
       <ProductMedia>
-        <AddButton type="button" aria-label={`Add ${product.name} to cart`}>
+        <AddButton
+          type="button"
+          aria-label={`Add ${product.name} to cart`}
+          onClick={() => addProduct(product)}
+        >
           +
         </AddButton>
         <span aria-hidden="true">{String(product.id).padStart(2, '0')}</span>
