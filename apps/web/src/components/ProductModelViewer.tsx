@@ -22,6 +22,38 @@ const Viewport = styled.div`
   }
 `
 
+type PaintRole = 'frame' | 'surface'
+
+function markPaintable(mesh: THREE.Mesh, role: PaintRole) {
+  mesh.userData.paintRole = role
+}
+
+function paintRole(object: THREE.Object3D): PaintRole | null {
+  const role = object.userData.paintRole
+  return role === 'frame' || role === 'surface' ? role : null
+}
+
+function applyFinish(root: THREE.Object3D, hex: string) {
+  const surface = new THREE.Color(hex)
+  const hsl = { h: 0, s: 0, l: 0 }
+  surface.getHSL(hsl)
+  const frame = new THREE.Color().setHSL(hsl.h, hsl.s, Math.max(0.05, hsl.l * 0.62))
+  const seen = new WeakSet<THREE.Material>()
+
+  root.traverse((child) => {
+    if (!(child instanceof THREE.Mesh)) return
+    const role = paintRole(child)
+    if (!role) return
+
+    const materials = Array.isArray(child.material) ? child.material : [child.material]
+    for (const material of materials) {
+      if (!(material instanceof THREE.MeshStandardMaterial) || seen.has(material)) continue
+      seen.add(material)
+      material.color.copy(role === 'frame' ? frame : surface)
+    }
+  })
+}
+
 function createChair(): THREE.Group {
   const group = new THREE.Group()
   const wood = new THREE.MeshStandardMaterial({
@@ -36,10 +68,12 @@ function createChair(): THREE.Group {
 
   const seatMesh = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.12, 1.1), seat)
   seatMesh.position.y = 0.55
+  markPaintable(seatMesh, 'surface')
   group.add(seatMesh)
 
   const back = new THREE.Mesh(new THREE.BoxGeometry(1.1, 1.05, 0.12), wood)
   back.position.set(0, 1.15, -0.49)
+  markPaintable(back, 'frame')
   group.add(back)
 
   const legGeo = new THREE.CylinderGeometry(0.05, 0.06, 0.55, 12)
@@ -51,6 +85,7 @@ function createChair(): THREE.Group {
   ] as const) {
     const leg = new THREE.Mesh(legGeo, wood)
     leg.position.set(x, 0.275, z)
+    markPaintable(leg, 'frame')
     group.add(leg)
   }
 
@@ -71,6 +106,7 @@ function createTable(): THREE.Group {
 
   const surface = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.1, 1.1), top)
   surface.position.y = 0.85
+  markPaintable(surface, 'surface')
   group.add(surface)
 
   const legGeo = new THREE.BoxGeometry(0.1, 0.8, 0.1)
@@ -82,6 +118,7 @@ function createTable(): THREE.Group {
   ] as const) {
     const leg = new THREE.Mesh(legGeo, wood)
     leg.position.set(x, 0.4, z)
+    markPaintable(leg, 'frame')
     group.add(leg)
   }
 
@@ -103,14 +140,17 @@ function createLamp(): THREE.Group {
 
   const base = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.4, 0.08, 24), metal)
   base.position.y = 0.04
+  markPaintable(base, 'frame')
   group.add(base)
 
   const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.2, 16), metal)
   stem.position.y = 0.68
+  markPaintable(stem, 'frame')
   group.add(stem)
 
   const cone = new THREE.Mesh(new THREE.ConeGeometry(0.45, 0.5, 24, 1, true), shade)
   cone.position.y = 1.4
+  markPaintable(cone, 'surface')
   group.add(cone)
 
   const bulb = new THREE.Mesh(
@@ -147,10 +187,12 @@ function createCloset(): THREE.Group {
 
   const body = new THREE.Mesh(new THREE.BoxGeometry(0.41, 0.52, 0.34), wood)
   body.position.y = 0.26
+  markPaintable(body, 'frame')
   group.add(body)
 
   const door = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.5, 0.03), doorMaterial)
   door.position.set(0, 0.26, 0.185)
+  markPaintable(door, 'surface')
   group.add(door)
 
   const handle = new THREE.Mesh(
@@ -177,8 +219,20 @@ function createModel(kind: ProductModel): THREE.Group {
   }
 }
 
-export function ProductModelViewer({ model }: { model: ProductModel }) {
+export function ProductModelViewer({
+  model,
+  color,
+}: {
+  model: ProductModel
+  color: string
+}) {
   const containerRef = useRef<HTMLDivElement>(null)
+  const productRef = useRef<THREE.Group | null>(null)
+  const colorRef = useRef(color)
+
+  useEffect(() => {
+    colorRef.current = color
+  }, [color])
 
   useEffect(() => {
     const container = containerRef.current
@@ -231,12 +285,14 @@ export function ProductModelViewer({ model }: { model: ProductModel }) {
     scene.add(ground)
 
     const product = createModel(model)
+    applyFinish(product, colorRef.current)
     product.traverse((child) => {
       if (child instanceof THREE.Mesh) {
         child.castShadow = true
         child.receiveShadow = true
       }
     })
+    productRef.current = product
     scene.add(product)
 
     let frameId = 0
@@ -260,6 +316,7 @@ export function ProductModelViewer({ model }: { model: ProductModel }) {
     resizeObserver.observe(container)
 
     return () => {
+      productRef.current = null
       window.cancelAnimationFrame(frameId)
       resizeObserver.disconnect()
       controls.dispose()
@@ -278,6 +335,12 @@ export function ProductModelViewer({ model }: { model: ProductModel }) {
       renderer.domElement.remove()
     }
   }, [model])
+
+  useEffect(() => {
+    const product = productRef.current
+    if (!product) return
+    applyFinish(product, color)
+  }, [color])
 
   return <Viewport ref={containerRef} role="img" aria-label="3D product model" />
 }

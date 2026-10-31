@@ -1,8 +1,16 @@
+import { useState } from 'react'
 import { Link, useParams } from 'react-router'
 import styled from 'styled-components'
 import { Page } from '../components/Page.tsx'
+import { ProductColorPalette } from '../components/ProductColorPalette.tsx'
 import { ProductModelViewer } from '../components/ProductModelViewer.tsx'
+import {
+  finishById,
+  finishForProductColor,
+  type ProductFinishId,
+} from '../components/product-finishes.ts'
 import { useProductDetails } from '../network/hooks/products/use-product-details.ts'
+import type { ProductDetails } from '../network/services/products/product-model.ts'
 
 const priceFormat = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -78,6 +86,14 @@ export function ProductDetailsPage() {
     )
   }
 
+  return <LoadedProduct key={product.id} product={product} />
+}
+
+function LoadedProduct({ product }: { product: ProductDetails }) {
+  const preset = finishForProductColor(product.color)
+  const [finishId, setFinishId] = useState<ProductFinishId>(preset.id)
+  const finish = finishById(finishId)
+
   return (
     <Page title={product.name}>
       <Layout>
@@ -85,7 +101,8 @@ export function ProductDetailsPage() {
           <Price>{priceFormat.format(product.price)}</Price>
           <Hint>Drag to rotate · scroll to zoom</Hint>
         </Meta>
-        <ProductModelViewer model={product.model} />
+        <ProductColorPalette value={finish.id} onChange={setFinishId} />
+        <ProductModelViewer model={product.model} color={finish.hex} />
         <BackLink to="/">← All products</BackLink>
       </Layout>
     </Page>
