@@ -5,6 +5,7 @@ import { Navbar } from './components/Navbar.tsx'
 import { Page } from './components/Page.tsx'
 import { CartPage } from './pages/CartPage.tsx'
 import { HomePage } from './pages/HomePage.tsx'
+import { ProfilePage } from './pages/ProfilePage.tsx'
 import { SpaceDesignOptionsPage } from './pages/SpaceDesignOptionsPage.tsx'
 import { UploadedSpacePage } from './pages/UploadedSpacePage.tsx'
 
@@ -52,6 +53,7 @@ function App() {
             }
           />
           <Route path="cart" element={<CartPage />} />
+          <Route path="profile" element={<ProfilePage />} />
           <Route path="orders" element={<Page title="Orders" />} />
           <Route path="space" element={<SpaceDesignOptionsPage />} />
           <Route path="space/my-design" element={<UploadedSpacePage />} />

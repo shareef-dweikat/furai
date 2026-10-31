@@ -1,8 +1,9 @@
 import { NavLink } from 'react-router'
 import styled from 'styled-components'
 import { useCartStore } from '../stores/use-cart-store.ts'
+import { useProfileStore } from '../stores/use-profile-store.ts'
 
-const navItems = [
+const baseNavItems = [
   { to: '/cart', label: 'Cart' },
   { to: '/orders', label: 'Orders' },
   { to: '/', label: 'Home' },
@@ -61,6 +62,12 @@ const Tab = styled(NavLink)`
 
 export function Navbar() {
   const lineCount = useCartStore((state) => state.items.length)
+  const isSignedIn = useProfileStore((state) => state.isSignedIn)
+
+  const navItems = [
+    ...baseNavItems,
+    ...(isSignedIn ? [{ to: '/profile', label: 'Profile' }] : []),
+  ]
 
   return (
     <Bar>

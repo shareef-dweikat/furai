@@ -1,0 +1,125 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 Create `apps/web/src/stores/use-profile-store.ts`": [
+      {
+        "executionId": "b04d7ddd-72ba-4c93-86b4-f50e515e2d0c",
+        "chatSessionId": "sess_c9229805-90a0-4222-8b63-19bb601bbecc",
+        "timestamp": 1793448724461
+      },
+      {
+        "executionId": "b04d7ddd-72ba-4c93-86b4-f50e515e2d0c",
+        "chatSessionId": "sess_c9229805-90a0-4222-8b63-19bb601bbecc",
+        "timestamp": 1793448729028
+      },
+      {
+        "executionId": "b04d7ddd-72ba-4c93-86b4-f50e515e2d0c",
+        "chatSessionId": "sess_c9229805-90a0-4222-8b63-19bb601bbecc",
+        "timestamp": 1793448766942
+      }
+    ],
+    "2.1 Create `apps/web/src/components/ProfileForm.tsx`": [
+      {
+        "executionId": "b04d7ddd-72ba-4c93-86b4-f50e515e2d0c",
+        "chatSessionId": "sess_c9229805-90a0-4222-8b63-19bb601bbecc",
+        "timestamp": 1793448724498
+      },
+      {
+        "executionId": "b04d7ddd-72ba-4c93-86b4-f50e515e2d0c",
+        "chatSessionId": "sess_c9229805-90a0-4222-8b63-19bb601bbecc",
+        "timestamp": 1793448769640
+      },
+      {
+        "executionId": "b04d7ddd-72ba-4c93-86b4-f50e515e2d0c",
+        "chatSessionId": "sess_c9229805-90a0-4222-8b63-19bb601bbecc",
+        "timestamp": 1793448819908
+      }
+    ],
+    "3.1 Create `apps/web/src/pages/ProfilePage.tsx`": [
+      {
+        "executionId": "b04d7ddd-72ba-4c93-86b4-f50e515e2d0c",
+        "chatSessionId": "sess_c9229805-90a0-4222-8b63-19bb601bbecc",
+        "timestamp": 1793448724515
+      },
+      {
+        "executionId": "b04d7ddd-72ba-4c93-86b4-f50e515e2d0c",
+        "chatSessionId": "sess_c9229805-90a0-4222-8b63-19bb601bbecc",
+        "timestamp": 1793448770009
+      },
+      {
+        "executionId": "b04d7ddd-72ba-4c93-86b4-f50e515e2d0c",
+        "chatSessionId": "sess_c9229805-90a0-4222-8b63-19bb601bbecc",
+        "timestamp": 1793448820122
+      }
+    ],
+    "4.1 Modify `apps/web/src/components/Navbar.tsx`": [
+      {
+        "executionId": "b04d7ddd-72ba-4c93-86b4-f50e515e2d0c",
+        "chatSessionId": "sess_c9229805-90a0-4222-8b63-19bb601bbecc",
+        "timestamp": 1793448724531
+      },
+      {
+        "executionId": "b04d7ddd-72ba-4c93-86b4-f50e515e2d0c",
+        "chatSessionId": "sess_c9229805-90a0-4222-8b63-19bb601bbecc",
+        "timestamp": 1793448822667
+      },
+      {
+        "executionId": "b04d7ddd-72ba-4c93-86b4-f50e515e2d0c",
+        "chatSessionId": "sess_c9229805-90a0-4222-8b63-19bb601bbecc",
+        "timestamp": 1793448855942
+      }
+    ],
+    "5.1 Modify `apps/web/src/App.tsx`": [
+      {
+        "executionId": "b04d7ddd-72ba-4c93-86b4-f50e515e2d0c",
+        "chatSessionId": "sess_c9229805-90a0-4222-8b63-19bb601bbecc",
+        "timestamp": 1793448724548
+      },
+      {
+        "executionId": "b04d7ddd-72ba-4c93-86b4-f50e515e2d0c",
+        "chatSessionId": "sess_c9229805-90a0-4222-8b63-19bb601bbecc",
+        "timestamp": 1793448822868
+      },
+      {
+        "executionId": "b04d7ddd-72ba-4c93-86b4-f50e515e2d0c",
+        "chatSessionId": "sess_c9229805-90a0-4222-8b63-19bb601bbecc",
+        "timestamp": 1793448855732
+      }
+    ],
+    "1. Create `use-profile-store.ts`": [
+      {
+        "executionId": "b04d7ddd-72ba-4c93-86b4-f50e515e2d0c",
+        "chatSessionId": "sess_c9229805-90a0-4222-8b63-19bb601bbecc",
+        "timestamp": 1793448766987
+      }
+    ],
+    "2. Create `ProfileForm.tsx`": [
+      {
+        "executionId": "b04d7ddd-72ba-4c93-86b4-f50e515e2d0c",
+        "chatSessionId": "sess_c9229805-90a0-4222-8b63-19bb601bbecc",
+        "timestamp": 1793448819932
+      }
+    ],
+    "3. Create `ProfilePage.tsx`": [
+      {
+        "executionId": "b04d7ddd-72ba-4c93-86b4-f50e515e2d0c",
+        "chatSessionId": "sess_c9229805-90a0-4222-8b63-19bb601bbecc",
+        "timestamp": 1793448820142
+      }
+    ],
+    "5. Modify `App.tsx`": [
+      {
+        "executionId": "b04d7ddd-72ba-4c93-86b4-f50e515e2d0c",
+        "chatSessionId": "sess_c9229805-90a0-4222-8b63-19bb601bbecc",
+        "timestamp": 1793448855765
+      }
+    ],
+    "4. Modify `Navbar.tsx`": [
+      {
+        "executionId": "b04d7ddd-72ba-4c93-86b4-f50e515e2d0c",
+        "chatSessionId": "sess_c9229805-90a0-4222-8b63-19bb601bbecc",
+        "timestamp": 1793448855967
+      }
+    ]
+  }
+}
